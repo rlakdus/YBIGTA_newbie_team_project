@@ -1,0 +1,97 @@
+Last login: Wed Jan 21 14:48:57 on ttys004
+(base) imsubeen@Imui-MacBookAir ~ % git clone https://github.com/rlakdus/YBIGTA_newbie_team_project.git
+Cloning into 'YBIGTA_newbie_team_project'...
+remote: Enumerating objects: 26, done.
+remote: Counting objects: 100% (26/26), done.
+remote: Compressing objects: 100% (22/22), done.
+remote: Total 26 (delta 3), reused 24 (delta 1), pack-reused 0 (from 0)
+Receiving objects: 100% (26/26), 9.04 KiB | 3.01 MiB/s, done.
+Resolving deltas: 100% (3/3), done.
+(base) imsubeen@Imui-MacBookAir ~ % cd YBIGTA_newbie_team_project
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % add .
+zsh: command not found: add
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git add .
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git status
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git commit -m "push"
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git push origin main
+remote: Permission to rlakdus/YBIGTA_newbie_team_project.git denied to imss00.
+fatal: unable to access 'https://github.com/rlakdus/YBIGTA_newbie_team_project.git/': The requested URL returned error: 403
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git add .
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git pushpush origin main\
+> 
+git: 'pushpush' is not a git command. See 'git --help'.
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git push origin main
+
+Everything up-to-date
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git add .
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git push origin main
+Everything up-to-date
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git checkout main
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % touch test_protection.txt
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git add .
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git commit -m "Test branch protection"
+[main f475f3f] Test branch protection
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 test_protection.txt
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git push origin main
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 288 bytes | 288.00 KiB/s, done.
+Total 3 (delta 1), reused 1 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+remote: error: GH006: Protected branch update failed for refs/heads/main.
+remote: 
+remote: - Changes must be made through a pull request.
+To https://github.com/rlakdus/YBIGTA_newbie_team_project.git
+ ! [remote rejected] main -> main (protected branch hook declined)
+error: failed to push some refs to 'https://github.com/rlakdus/YBIGTA_newbie_team_project.git'
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git reset --hard HEAD~1
+HEAD is now at 9dd1c33 add submission
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % open .
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git checkout main
+Already on 'main'
+Your branch is up to date with 'origin/main'.
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git pull origin main
+From https://github.com/rlakdus/YBIGTA_newbie_team_project
+ * branch            main       -> FETCH_HEAD
+Already up to date.
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % git checkout -b feature/gitignore-setup
+Switched to a new branch 'feature/gitignore-setup'
+(base) imsubeen@Imui-MacBookAir YBIGTA_newbie_team_project % vi .gitignore
+
+__pycache__/
+.DS_Store
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+Type  :qa!  and press <Enter> to abandon all changes and exit Vim       
