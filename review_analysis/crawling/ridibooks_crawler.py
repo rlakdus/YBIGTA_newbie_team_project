@@ -9,13 +9,14 @@ from selenium.webdriver.common.by import By
 import time
 import os
 import csv
+from typing import List, Dict, Union
 
 
 class RidiBooksCrawler(BaseCrawler):
     def __init__(self, output_dir: str):
         super().__init__(output_dir)
         self.driver = None
-        self.reviews = []
+        self.reviews: List[Dict[str, Union[str, int]]] = []
         
     def start_browser(self):
         options = Options()
