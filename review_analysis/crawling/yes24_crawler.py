@@ -1,7 +1,7 @@
 import pandas as pd
 import time
 import os
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any, cast
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -23,7 +23,7 @@ class Yes24Crawler(BaseCrawler):
     
     def __init__(self, output_dir: str) -> None:
         """
-        Yes24Crawler 인스턴스를 초기화.
+        Yes24Crawler 인스턴스를 초기화
 
         Args:
             output_dir (str): 수집된 데이터(CSV)가 저장될 폴더 경로
@@ -36,8 +36,7 @@ class Yes24Crawler(BaseCrawler):
         
     def start_browser(self) -> None:
         """
-        Selenium WebDriver를 실행하고 대상 URL로 이동합니다.
-        한줄평 구역이 로딩되도록 스크롤합니다.
+        Selenium WebDriver를 실행하고 대상 URL로 이동
         """
         options = webdriver.ChromeOptions()
         # options.add_argument("--headless") 
@@ -47,9 +46,11 @@ class Yes24Crawler(BaseCrawler):
         
         assert self.driver is not None
         
+        # 시작 후 가장 아래로
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(1)
         
+        # 한줄평 구역 로딩 대기 및 이동
         try:
             target_div = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.ID, "infoset_oneCommentList"))
@@ -61,19 +62,16 @@ class Yes24Crawler(BaseCrawler):
 
     def scrape_reviews(self) -> List[Dict[str, str]]:
         """
-        크롤링 진행
-        목표 개수(target_count)에 도달할 때까지 페이지를 넘기며 리뷰(별점, 날짜, 한줄평)를 수집합니다.
-
-        Returns:
-            List[Dict[str, str]]: 수집된 리뷰 딕셔너리 리스트 
+        실제 크롤링 진행
         """
         if self.driver is None:
             self.start_browser()
         
         assert self.driver is not None
         
-        print(f"크롤링 시작... (목표: 한줄평 {self.target_count}개)")
+        print(f"크롤링 시작 (목표: 한줄평 {self.target_count}개)")
         
+        # 탭 클릭 로직
         try:
             review_tab = self.driver.find_element(By.CSS_SELECTOR, "#yDetailTabNavWrap > div > ul > li:nth-child(2) > a")
             self.driver.execute_script("arguments[0].click();", review_tab)
@@ -85,7 +83,7 @@ class Yes24Crawler(BaseCrawler):
         
         while len(self.results) < self.target_count:
             try:
-                time.sleep(1.5)
+                time.sleep(1.5) 
                 
                 if self.driver is None:
                     break
@@ -100,6 +98,7 @@ class Yes24Crawler(BaseCrawler):
                     time.sleep(1)
                     continue
 
+                # 구역 안에서 리뷰 박스들 찾기
                 review_boxes = one_comment_zone.select("div.cmtInfoGrp")
                 
                 print(f"[{page_num}페이지] 한줄평 수집 중... (발견: {len(review_boxes)}개 / 누적: {len(self.results)}개)")
@@ -110,7 +109,6 @@ class Yes24Crawler(BaseCrawler):
 
                 for box in review_boxes:
                     try:
-                        #내용
                         content: str = ""
                         txt_tag = box.select_one(".cmt_cont .txt")
                         
@@ -120,13 +118,11 @@ class Yes24Crawler(BaseCrawler):
                         if not content: 
                             continue 
 
-                        #날짜
                         date: str = ""
                         date_tag = box.select_one("div.cmt_etc em.txt_date")
                         if isinstance(date_tag, Tag): 
                             date = date_tag.text.strip()
 
-                        #별점
                         rating: str = "Unknown"
                         rating_tag = box.select_one(".cmt_rating .rating")
                         
@@ -147,7 +143,7 @@ class Yes24Crawler(BaseCrawler):
                         })
 
                         if len(self.results) >= self.target_count:
-                            print(f"목표 달성 종료합니다.")
+                            print(f"목표 달성! 종료합니다.")
                             break
                     except Exception:
                         continue
@@ -195,8 +191,7 @@ class Yes24Crawler(BaseCrawler):
         
     def save_to_database(self) -> None:
         """
-        수집된 데이터(self.results)를 CSV 파일로 저장
-        데이터가 없으면 저장을 수행하지 않습니다.
+        수집된 데이터(self.results)를 CSV 파일로 저장합니다.
         """
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
