@@ -241,7 +241,6 @@ Bag-of-Words 키워드 분석
 
 <img width="1790" height="597" alt="Image" src="https://github.com/user-attachments/assets/66918944-5550-42e3-bfe7-dabf4722a09f" />
 
-<img width="1642" height="620" alt="Image" src="https://github.com/user-attachments/assets/3e28b4e5-fc1f-4fdf-86d3-9ed985d8bdc1" />
 
 1. 별점 분석
 - 별점 분포
@@ -256,15 +255,13 @@ Bag-of-Words 키워드 분석
     - (월별 별점 평균선 그래프가 있다면) 출시 초기부터 현재까지 꾸준히 높은 평점을 유지하고 있으며, 특정 시점에 평점이 급락하는 등의 특이 동향은 발견되지 않았다.
 
 2. 리뷰 작성 시점 분석
+
+<img width="810" height="578" alt="Image" src="https://github.com/user-attachments/assets/46d0077d-239d-4cfc-9781-f12665687229" />
+
 - 연도별 리뷰 수
     - 연도별 리뷰 추이를 확인한 결과, 도서가 출간되고 베스트셀러로 화제가 되었던 2020년과 2021년에 리뷰가 폭발적으로 집중되었다. 이후 시간이 지남에 따라 리뷰 작성 빈도는 자연스럽게 하락 안정화되는 우하향 추세를 보였다.
 
-3. 리뷰 길이 분석
-- 리뷰 텍스트 길이 분포
-    - 히스토그램을 통해 리뷰 텍스트 길이(글자 수) 분포를 확인하였다. 교보문고 리뷰 역시 대부분 1-2문장 내외의 짧은 단문 형식(Short-text)이 주를 이루고 있다.
-    - 길이가 길어질수록 빈도수가 급격히 줄어드는 전형적인 Right-skewed(우측 꼬리가 긴) 분포를 보이며, 이는 모바일 환경 등에서 간편하게 평점을 남기는 유저 패턴이 반영된 것으로 보인다.
-
-4. 감정 분석 분포
+3. 감정 분석 분포
    
 <img width="449" height="484" alt="Image" src="https://github.com/user-attachments/assets/0b59f93b-1f36-45e0-af8c-b7c438afee74" />
 
@@ -272,7 +269,7 @@ Bag-of-Words 키워드 분석
     - 별점을 기준으로 분류한 감정 분포(Positive/Neutral/Negative)를 분석한 결과, Positive(긍정) 리뷰가 전체의 대다수를 차지하였다.
     - Neutral(중립)과 Negative(부정) 리뷰는 상대적으로 매우 적은 비중을 보였다. 이는 앞서 살펴본 별점 분포와 일관된 결과로, 독자들이 느끼는 작품의 정서적 만족도가 매우 높음을 시사한다.
 
-5. 텍스트 기반 분석
+4. 텍스트 기반 분석
    
 <img width="1248" height="625" alt="Image" src="https://github.com/user-attachments/assets/18f76509-7307-4959-9402-a77de6e4c8f7" />
 
@@ -379,6 +376,10 @@ YES24
 
 <img width="1000" height="400" alt="yes24_montly_reviews" src="https://github.com/user-attachments/assets/c49092b6-36c9-4e31-9fbf-2eae8261d5e3" />
 
+
+KYOBO
+
+<img width="783" height="606" alt="Image" src="https://github.com/user-attachments/assets/17c3ffc4-3a81-4b51-8095-9b5f4415547c" />
 
 COMPARISON
 
