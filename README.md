@@ -172,7 +172,10 @@ month: 리뷰 작성 월
 weekday: 리뷰 작성 요일(0:월요일 - 6:일요일)
 
 감정 레이블 생성
-sentiment: 별점 기준 감정 분류 - 1~2점: negative/3점: neutral/4~5점: positive
+sentiment: 별점 기준 감정 분류 
+  - 1-2점: Negative
+  - 3점: Neutral
+  - 4-5점: Positive
 
 위에서 생성한 파생 변수들은 이후 탐색적 데이터 분석(EDA) 및 플랫폼 간 비교 분석에 활용하였다.
 
