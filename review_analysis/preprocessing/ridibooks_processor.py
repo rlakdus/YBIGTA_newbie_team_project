@@ -14,7 +14,7 @@ class RidibooksProcessor(BaseDataProcessor):
     okt: Okt
     vectorizer: CountVectorizer
 
-    def __init__(self, input_path: str, output_dir: str) -> None:
+    def __init__(self, input_path: str = None, output_dir: str = None) -> None:
         """
         RidibooksProcessor 초기화 함수.
 
@@ -29,13 +29,41 @@ class RidibooksProcessor(BaseDataProcessor):
         self.okt = Okt()
         self.df = pd.DataFrame()
         self.vectorizer = CountVectorizer()
+    
+    # api용
+    def preprocess_text(self, text: str) -> str:
+        """
+        단일 텍스트 전처리 (MongoDB/API용)
+        
+        Args:
+            text: 원본 텍스트
+            
+        Returns:
+            전처리된 텍스트
+        """
+        if not text or not isinstance(text, str):
+            return ""
+        
+        # 기존 메서드 재사용!
+        text = self._remove_emoji(text)
+        text = self._clean_korean_text(text)
+        
+        if self.okt:
+            try:
+                tokens = self._tokenize_korean(text)
+                text = " ".join(tokens)
+            except:
+                # 토큰화 실패 시 그냥 반환
+                pass
+        
+        return text
 
     def preprocess(self) -> None:
         """
         리뷰 데이터 전처리를 수행한다.
         """
         # 데이터 로드
-        loaded_df = pd.read_csv(self.input_path, header=None, names=['rating','date','content'])
+        loaded_df = pd.read_csv(self.input_path)
         self.df = cast(pd.DataFrame, loaded_df)
 
         # 결측치 제거

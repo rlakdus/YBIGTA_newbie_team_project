@@ -1,33 +1,66 @@
-import json
-
-from typing import Dict, Optional
-
+from typing import Optional
+from sqlalchemy import text
 from app.user.user_schema import User
-from app.config import USER_DATA
+
 
 class UserRepository:
-    def __init__(self) -> None:
-        self.users: Dict[str, dict] = self._load_users()
+    def __init__(self, db_session):
+        """
+        db_session:
+        - 테스트 환경: SQLite session
+        - 실제 환경: MySQL session
+        """
+        self.db = db_session
 
-    def _load_users(self) -> Dict[str, Dict]:
-        try:
-            with open(USER_DATA, "r") as f:
-                return json.load(f)
-        except FileNotFoundError:
-            raise ValueError("File not found")
+    def save_user(self, user: User) -> User:
+        """
+        email 기준으로
+        - 없으면 INSERT
+        - 있으면 UPDATE (UPSERT)
+        """
+        query = text("""
+        INSERT INTO users (email, password, username)
+        VALUES (:email, :password, :username)
+        ON CONFLICT(email) DO UPDATE SET
+            password = :password,
+            username = :username
+        """)
 
-    def get_user_by_email(self, email: str) -> Optional[User]:
-        user = self.users.get(email)
-        return User(**user) if user else None
-
-    def save_user(self, user: User) -> User: 
-        self.users[user.email] = user.model_dump()
-        with open(USER_DATA, "w") as f:
-            json.dump(self.users, f)
+        self.db.execute(
+            query,
+            {
+                "email": user.email,
+                "password": user.password,
+                "username": user.username,
+            },
+        )
+        self.db.commit()
         return user
 
+    def get_user_by_email(self, email: str) -> Optional[User]:
+        query = text("""
+        SELECT email, password, username
+        FROM users
+        WHERE email = :email
+        """)
+
+        result = self.db.execute(query, {"email": email}).fetchone()
+
+        if result is None:
+            return None
+
+        return User(
+            email=result.email,
+            password=result.password,
+            username=result.username,
+        )
+
     def delete_user(self, user: User) -> User:
-        del self.users[user.email]
-        with open(USER_DATA, "w") as f:
-            json.dump(self.users, f)
+        query = text("""
+        DELETE FROM users
+        WHERE email = :email
+        """)
+
+        self.db.execute(query, {"email": user.email})
+        self.db.commit()
         return user

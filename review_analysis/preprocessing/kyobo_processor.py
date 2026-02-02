@@ -14,7 +14,7 @@ except ImportError:
     Okt = None
 
 class KyoboProcessor(BaseDataProcessor):
-    def __init__(self, input_path: str, output_dir: str):
+    def __init__(self, input_path: str = None, output_dir: str = None):
         super().__init__(input_path, output_dir)
         self.df = None
         self.site_name = "kyobo"
@@ -32,6 +32,43 @@ class KyoboProcessor(BaseDataProcessor):
         except Exception as e:
             print(f"Warning: KoNLPy 초기화 실패 ({e}). 형태소 분석이 제한될 수 있습니다.")
             self.okt = None
+    
+    # api용
+    def preprocess_text(self, text: str) -> str:
+        """
+        단일 텍스트 전처리 (MongoDB/API용)
+        
+        Args:
+            text: 원본 텍스트
+            
+        Returns:
+            전처리된 텍스트
+        """
+        if not text or not isinstance(text, str):
+            return ""
+        
+        # 1. 텍스트 정제
+        text = self._clean_text(text)
+        
+        # 2. 형태소 분석 및 키워드 추출
+        if self.okt and text.strip():
+            try:
+                pos_tokens = self.okt.pos(text, stem=True, norm=True)
+                allowed_tags = ['Noun', 'Verb', 'Adjective', 'Adverb']
+                meaningless_words = {'것', '수', '등', '거', '좀', '막', '뭐', '이', '그', '저', '하다', '있다'}
+                
+                keywords = []
+                for word, tag in pos_tokens:
+                    if tag in allowed_tags and word not in meaningless_words:
+                        if len(word) > 1:  # 1글자 제외
+                            keywords.append(word)
+                
+                if keywords:
+                    return ' '.join(keywords)
+            except Exception as e:
+                print(f"형태소 분석 실패: {e}")
+        
+        return text
 
     # 계절 변수 로직
     def season(self, month: int) -> str:
