@@ -1,17 +1,12 @@
-# 개인정보 및 설정 파일
 .env
 
-# 파이썬 실행 시 생성되는 임시 파일
 __pycache__/
 *.pyc
 
-# 깃(Git) 관련 기록
 .git
 .gitignore
 
-# 운영체제 생성 파일 (맥북용)
 .DS_Store
 
-# 대용량 데이터 파일 (필요한 경우 제외)
 *.csv
 database/*.csv
