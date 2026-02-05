@@ -14,7 +14,7 @@ class RidibooksProcessor(BaseDataProcessor):
     okt: Okt
     vectorizer: CountVectorizer
 
-    def __init__(self, input_path: str, output_dir: str) -> None:
+    def __init__(self, input_path: str = None, output_dir: str = None) -> None:
         """
         RidibooksProcessor 초기화 함수.
 
@@ -29,51 +29,62 @@ class RidibooksProcessor(BaseDataProcessor):
         self.okt = Okt()
         self.df = pd.DataFrame()
         self.vectorizer = CountVectorizer()
+    
+    # api용
+    def preprocess_text(self, text: str) -> str:
+        """
+        단일 텍스트 전처리 (MongoDB/API용)
+        
+        Args:
+            text: 원본 텍스트
+            
+        Returns:
+            전처리된 텍스트
+        """
+        if not text or not isinstance(text, str):
+            return ""
+        
+        # 기존 메서드 재사용!
+        text = self._remove_emoji(text)
+        text = self._clean_korean_text(text)
+        
+        if self.okt:
+            try:
+                tokens = self._tokenize_korean(text)
+                text = " ".join(tokens)
+            except:
+                # 토큰화 실패 시 그냥 반환
+                pass
+        
+        return text
 
     def preprocess(self) -> None:
         """
         리뷰 데이터 전처리를 수행한다.
         """
         # 데이터 로드
-        loaded_df = pd.read_csv(self.input_path, header=None, names=['rating','date','content'])
+        try:
+            loaded_df = pd.read_csv(self.input_path, encoding="utf-8-sig", skipinitialspace=True)
+        except:
+            loaded_df = pd.read_csv(self.input_path, encoding="cp949", skipinitialspace=True)
+            
         self.df = cast(pd.DataFrame, loaded_df)
 
+        self.df.columns = self.df.columns.str.strip()
+        self.df["rating"] = pd.to_numeric(self.df["rating"], errors="coerce")
+        
         # 결측치 제거
-        missing_cnt = self.df[["rating", "date", "content"]].isnull().sum()
-        total_missing = missing_cnt.sum() # type: ignore
-        if total_missing > 0:
-            print(f"결측치 {total_missing}개 제거")
-            self.df = self.df.dropna(subset=["rating", "date", "content"])
-        else:
-            print("결측치 없음")
+        self.df = self.df.dropna(subset=["rating", "date", "content"])
 
         # 별점 이상치 제거
-        before_cnt = len(self.df)
         self.df = self.df[self.df["rating"].between(1, 5)]
-        after_cnt = len(self.df)
-        removed_cnt = before_cnt - after_cnt
-        if removed_cnt > 0:
-            print(f"별점 이상치 {removed_cnt}개 제거")
-        else:
-            print("별점 이상치 없음")
 
-        # 날짜 변환
-        self.df["date"] = pd.to_datetime(self.df["date"], format="%Y.%m.%d", errors="coerce")
+        self.df["date"] = pd.to_datetime(self.df["date"], errors="coerce")
         self.df = self.df.dropna(subset=["date"])
 
         # 날짜 이상치 제거 (발매일 이전)
         RELEASE_DATE = pd.to_datetime("2020-04-21")
-        before_cnt = len(self.df)
         self.df = self.df[self.df["date"] >= RELEASE_DATE]
-        removed_cnt = before_cnt - len(self.df)
-        if removed_cnt > 0:
-            print(f"발매일 이전 리뷰 {removed_cnt}개 제거")
-        else:
-            print("발매일 이전 리뷰 없음")
-        
-        # 리뷰 문자 수 이상치
-        self.df["content_len"] = self.df["content"].str.len()
-        print(len(self.df[self.df["content_len"] < 10]))
         
         # 텍스트 전처리
         self.df["content_preprocess"] = (

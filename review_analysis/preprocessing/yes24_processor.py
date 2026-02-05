@@ -9,7 +9,7 @@ class Yes24Processor(BaseDataProcessor):
     """
     Yes24 리뷰 데이터를 전처리하고 파생변수 생성하는 클래스
     """
-    def __init__(self, input_path: str, output_dir: str):
+    def __init__(self, input_path: str = None, output_dir: str = None):
         super().__init__(input_path, output_dir)
         
         # 맥북 환경변수나 시스템 경로를 체크해서 Okt에 입력
@@ -23,6 +23,34 @@ class Yes24Processor(BaseDataProcessor):
             print(f"Warning: KoNLPy 초기화 실패 ({e}).")
             self.okt = None
 
+    #api용
+    def preprocess_text(self, text: str) -> str:
+        """
+        단일 텍스트 전처리 (MongoDB/API용)
+        
+        Args:
+            text: 원본 텍스트
+            
+        Returns:
+            전처리된 텍스트
+        """
+        if not text or not isinstance(text, str):
+            return ""
+        
+        # 기존 메서드 재사용!
+        text = self._remove_emoji(text)
+        text = self._clean_korean_text(text)
+        
+        if self.okt:
+            try:
+                tokens = self._tokenize_korean(text)
+                text = " ".join(tokens)
+            except:
+                # 토큰화 실패 시 그냥 반환
+                pass
+        
+        return text
+
     def preprocess(self):
         """
         리뷰 데이터 전처리를 수행한다.
@@ -33,7 +61,7 @@ class Yes24Processor(BaseDataProcessor):
         # rating 컬럼을 숫자로 변환 (숫자가 아닌 값은 에러 없이 처리)
         self.df["rating"] = pd.to_numeric(self.df["rating"], errors="coerce")
         
-        # 결측치 제거 (방금 숫자로 변환하며 생긴 NaT/NaN 포함)
+        # 결측치 제거 
         missing_cnt = self.df[["rating", "date", "content"]].isnull().sum()
         total_missing = missing_cnt.sum()
         if total_missing > 0:
@@ -43,8 +71,7 @@ class Yes24Processor(BaseDataProcessor):
             print("결측치 없음")
 
         self.df = self.df[self.df["rating"].between(1, 5)]
-        
-        # errors="coerce"를 통해 잘못된 형식은 NaT로 바꾸고 제거합니다.
+       
         self.df["date"] = pd.to_datetime(self.df["date"], errors="coerce")
         self.df = self.df.dropna(subset=["date"])
         

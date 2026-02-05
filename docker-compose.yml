@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # 몽고디비 서비스
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb_container
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  # 내 FastAPI 서버 서비스
+  app:
+    build: .
+    container_name: fast_api_app
+    ports:
+      - "8000:8000"
+    # [이 부분이 반드시 있어야 코드가 실시간으로 반영됩니다]
+    volumes:
+      - .:/app  
+    env_file:
+      - .env
+    environment:
+      - MONGODB_HOST=mongodb
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo_data:
