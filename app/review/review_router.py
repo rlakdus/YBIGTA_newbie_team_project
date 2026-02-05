@@ -13,15 +13,20 @@ async def preprocess_reviews(site_name: str):
     """
     크롤링한 리뷰 데이터를 전처리하는 API
     
-    site_name: kyobo, ridibooks, yes24 중 하나
+    Args:
+        site_name: 사이트 이름 (kyobo, ridibooks, yes24 중 하나)
+    
+    Returns:
+        전처리 결과 정보
     """
     try:
-        # 1. MongoDB 연결
+        # 1. MongoDB 연결, 해당 
         db = mongo_db
-        collection = db["reviews"]
         
         # 2. 해당 사이트의 리뷰만 가져오기
-        raw_reviews = list(collection.find({"source": {"$regex": site_name.strip(), "$options": "i"}}))
+        collection = db[f"reviews_{site_name}"]
+        raw_reviews = list(collection.find({}))
+
         
         if not raw_reviews:
             raise HTTPException(
@@ -31,7 +36,7 @@ async def preprocess_reviews(site_name: str):
         
         # 3. 사이트별로 적절한 Processor 선택
         if site_name == "kyobo":
-            processor = KyoboProcessor()  # ⭐ 인자 없이 생성 가능!
+            processor = KyoboProcessor() 
         elif site_name == "ridibooks":
             processor = RidibooksProcessor()
         elif site_name == "yes24":
@@ -41,19 +46,14 @@ async def preprocess_reviews(site_name: str):
                 status_code=400,
                 detail=f"지원하지 않는 사이트: {site_name}. kyobo, ridibooks, yes24 중 하나를 입력하세요."
             )
-        
+            
         # 4. 전처리 수행
         processed_reviews = []
         
         for review in raw_reviews:
-            actual_content = None
-            for key in review.keys():
-                if key.strip() in ["content", "review", "text"]:
-                    actual_content = review[key]
-                    break
-            
-            if actual_content:
-                processed_text = processor.preprocess_text(actual_content)
+            if "content" in review:
+                # preprocess_text() 메서드 사용!
+                processed_text = processor.preprocess_text(review["content"])
                 
                 processed_reviews.append({
                     "original_id": str(review["_id"]),
@@ -65,7 +65,7 @@ async def preprocess_reviews(site_name: str):
                 })
         
         # 5. 전처리된 데이터를 MongoDB에 저장
-        processed_collection = db[f"{site_name}_processed"]
+        processed_collection = db[f"preprocessed_reviews_{site_name}"]
         
         # 기존 데이터 삭제
         processed_collection.delete_many({})
