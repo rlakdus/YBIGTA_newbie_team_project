@@ -18,22 +18,34 @@ class UserRepository:
         - 없으면 INSERT
         - 있으면 UPDATE (UPSERT)
         """
-        query = text("""
-        INSERT INTO users (email, password, username)
-        VALUES (:email, :password, :username)
-        ON DUPLICATE KEY UPDATE
-            password = VALUES(password),
-            username = VALUES(username)
-        """)
+        # 1. 이메일 존재 여부 확인 (SQLite/MySQL 공용 문법)
+        check_query = text("SELECT email FROM users WHERE email = :email")
+        existing = self.db.execute(check_query, {"email": user.email}).fetchone()
 
-        self.db.execute(
-            query,
-            {
+        if existing:
+            # 2. 존재하면 UPDATE 실행
+            update_query = text("""
+                UPDATE users 
+                SET password = :password, username = :username 
+                WHERE email = :email
+            """)
+            self.db.execute(update_query, {
                 "email": user.email,
                 "password": user.password,
-                "username": user.username,
-            },
-        )
+                "username": user.username
+            })
+        else:
+            # 3. 존재하지 않으면 INSERT 실행
+            insert_query = text("""
+                INSERT INTO users (email, password, username) 
+                VALUES (:email, :password, :username)
+            """)
+            self.db.execute(insert_query, {
+                "email": user.email,
+                "password": user.password,
+                "username": user.username
+            })
+
         self.db.commit()
         return user
 
@@ -44,15 +56,16 @@ class UserRepository:
         WHERE email = :email
         """)
 
+        # result[0], result[1] 처럼 인덱스로 접근하여 모든 DB 라이브러리 호환성 확보
         result = self.db.execute(query, {"email": email}).fetchone()
 
         if result is None:
             return None
 
         return User(
-            email=result.email,
-            password=result.password,
-            username=result.username,
+            email=result[0],
+            password=result[1],
+            username=result[2],
         )
 
     def delete_user(self, user: User) -> User:
