@@ -32,7 +32,7 @@ Docker Hub 주소 : [https://hub.docker.com/repository/docker/qkrwnsqja0220/ybig
 #### 데이터 전처리 API (MongoDB 연동)
  | 기능 | 실행 결과 (스크린샷) |
  | :--- | :--- |
- | **전처리 실행 결과** | ![preprocess](./aws/process.png) |
+ | **전처리 실행 결과** | ![preprocess](./aws/preprocess.png) |
 
  #### CI/CD 자동화 성공 인증
 | 기능 | 실행 결과 (스크린샷) |
