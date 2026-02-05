@@ -16,7 +16,7 @@ MySQL과 MongoDB를 활용해서 DB환경을 구축한 뒤, Docker를 활용해 
 
 ## 과제 내용
 ### 1. Docker Hub 주소
-Docker Hub 주소 : [https://hub.docker.com/r/qkrwnsqja8996/ybigta-assignment] 
+Docker Hub 주소 : [https://hub.docker.com/repository/docker/qkrwnsqja0220/ybigta-project] 
 
 ### 2. AIP 실행 결과 (AWS EC2 배포 환경)
 > 모든 API는 AWS EC2 인스턴스에 배포된 Swagger UI 환경에 테스트되었습니다.
