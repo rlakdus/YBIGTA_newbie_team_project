@@ -2,7 +2,7 @@ name: Deploy to EC2 with Docker
 
 on:
   push:
-    branches: [ "pb" ]  
+    branches: [ "main" ]  
 
 jobs:
   build-and-push:
@@ -25,13 +25,13 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          platforms: linux/amd64  # EC2 아키텍처에 맞게 빌드
+          platforms: linux/amd64  
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/ybigta-project:latest
 
   deploy-to-ec2:
     name: Deploy to EC2
-    needs: build-and-push  # 빌드 Job이 성공해야만 실행
+    needs: build-and-push  
     runs-on: ubuntu-latest
     steps:
       - name: SSH to EC2 and Run Container
@@ -41,13 +41,10 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. latest image pull
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/ybigta-project:latest
             
-            # 2. 기존 컨테이너 중지, 삭제
             sudo docker rm -f my-api-server || true
             
-            # 3. 새 컨테이너 실행 (볼륨 마운트, .env 필수 포함)
             sudo docker run -d \
               --name my-api-server \
               -v /home/ec2-user:/data \
@@ -55,5 +52,4 @@ jobs:
               -p 8000:8000 \
               ${{ secrets.DOCKER_USERNAME }}/ybigta-project:latest
             
-            # 4. 이미지 정리
             sudo docker image prune -f
