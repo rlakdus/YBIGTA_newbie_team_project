@@ -21,9 +21,9 @@ class UserRepository:
         query = text("""
         INSERT INTO users (email, password, username)
         VALUES (:email, :password, :username)
-        ON CONFLICT(email) DO UPDATE SET
-            password = :password,
-            username = :username
+        ON DUPLICATE KEY UPDATE
+            password = VALUES(password),
+            username = VALUES(username)
         """)
 
         self.db.execute(

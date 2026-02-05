@@ -61,7 +61,7 @@ class Yes24Processor(BaseDataProcessor):
         # rating 컬럼을 숫자로 변환 (숫자가 아닌 값은 에러 없이 처리)
         self.df["rating"] = pd.to_numeric(self.df["rating"], errors="coerce")
         
-        # 결측치 제거 (방금 숫자로 변환하며 생긴 NaT/NaN 포함)
+        # 결측치 제거 
         missing_cnt = self.df[["rating", "date", "content"]].isnull().sum()
         total_missing = missing_cnt.sum()
         if total_missing > 0:
@@ -71,8 +71,7 @@ class Yes24Processor(BaseDataProcessor):
             print("결측치 없음")
 
         self.df = self.df[self.df["rating"].between(1, 5)]
-        
-        # errors="coerce"를 통해 잘못된 형식은 NaT로 바꾸고 제거합니다.
+       
         self.df["date"] = pd.to_datetime(self.df["date"], errors="coerce")
         self.df = self.df.dropna(subset=["date"])
         

@@ -21,7 +21,7 @@ async def preprocess_reviews(site_name: str):
         collection = db["reviews"]
         
         # 2. 해당 사이트의 리뷰만 가져오기
-        raw_reviews = list(collection.find({"source": site_name}))
+        raw_reviews = list(collection.find({"source": {"$regex": site_name.strip(), "$options": "i"}}))
         
         if not raw_reviews:
             raise HTTPException(
@@ -46,9 +46,14 @@ async def preprocess_reviews(site_name: str):
         processed_reviews = []
         
         for review in raw_reviews:
-            if "content" in review:
-                # ⭐ preprocess_text() 메서드 사용!
-                processed_text = processor.preprocess_text(review["content"])
+            actual_content = None
+            for key in review.keys():
+                if key.strip() in ["content", "review", "text"]:
+                    actual_content = review[key]
+                    break
+            
+            if actual_content:
+                processed_text = processor.preprocess_text(actual_content)
                 
                 processed_reviews.append({
                     "original_id": str(review["_id"]),
