@@ -1,11 +1,24 @@
-from rag.llm import get_llm
-from utils.state import ChatState
+from st_app.rag.llm import get_llm
+from st_app.rag.prompt import CHAT_PROMPT
+from st_app.utils.state import ChatState
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
-def chat_node(state: State):
-    llm = get_llm
-
-    # 일반적인 대화 프롬프트 설정
-    prompt = "당신은 친절한 도서 상담원입니다. 일상적인 대화를 나누거나, 질문에 대해 답변을 해주세요."
-    response = llm.invoke(state["messages"])
-
+def chat_node(state: ChatState):
+    llm = get_llm()
+    
+    current_messages = state.messages
+    
+    history = []
+    for msg in current_messages:
+        if isinstance(msg, dict):
+            if msg.get("role") == "user":
+                history.append(HumanMessage(content=msg["content"]))
+            elif msg.get("role") == "assistant":
+                history.append(AIMessage(content=msg["content"]))
+        else:
+            history.append(msg)
+        
+    response = llm.invoke([SystemMessage(content=CHAT_PROMPT),
+                           HumanMessage(content=f"사용자 질문: {state.user_input}\n질문에 맞춰서 센스 있게 대답해줘.")])
+    
     return {"messages": [response]}
