@@ -17,7 +17,7 @@ def subject_info_node(state: ChatState):
     
     # 4. 메시지 기록 변환 
     history = []
-    for msg in state.messages:
+    for msg in state.get("messages", []):
         if isinstance(msg, dict):
             if msg.get("role") == "user":
                 history.append(HumanMessage(content=msg["content"]))
@@ -27,8 +27,10 @@ def subject_info_node(state: ChatState):
             history.append(msg)
 
     # 5. LLM 호출 
-    llm = get_llm()
-    response = llm.invoke([sys_msg] + history + [HumanMessage(content=f"질문: {state.user_input}\n필요한 정보만 골라 답해.")])
+    #llm = get_llm()
+    llm = get_llm(model="solar-mini")
+
+    response = llm.invoke([sys_msg] + history + [HumanMessage(content=f"질문: {state['user_input']}\n필요한 정보만 골라 답해.")])
     
     # 6. 결과 반환
     return {"messages": [response],"rag_response": response.content}
