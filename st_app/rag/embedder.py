@@ -8,6 +8,31 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 def build_faiss_index(save_path="st_app/db/faiss_index"):
+    """
+    리뷰 데이터를 전처리하여 FAISS 벡터 DB와 meta.json을 생성하는 함수.
+
+    교보문고, 리디북스, YES24에서 수집한 전처리 리뷰 CSV를 불러와
+    텍스트 길이 기준으로 short/mid/long으로 분류하고,
+    SBERT 임베딩을 생성하여 FAISS 인덱스를 구축한다.
+
+    또한 각 리뷰(또는 chunk)에 대한 상세 메타데이터를 meta.json에 저장한다.
+
+    처리 단계:
+        1. CSV 리뷰 데이터 로드 및 병합
+        2. 결측값/중복 제거 및 최소 길이 필터링
+        3. 리뷰 길이 기반 카테고리 분류 (short/mid/long)
+        4. 긴 리뷰는 TextSplitter로 chunk 분할
+        5. Document 객체 생성 및 metadata 부여
+        6. SBERT 모델로 임베딩 생성
+        7. FAISS 벡터 DB 저장
+        8. meta.json 파일 저장
+
+    Args:
+        save_path (str): FAISS 인덱스 및 meta.json 저장 경로
+
+    Returns:
+        None
+    """
     BASE_PATH = "database"
     kyobo_path = os.path.join(BASE_PATH, "preprocessed_reviews_kyobo.csv")
     ridi_path = os.path.join(BASE_PATH, "preprocessed_reviews_ridibooks.csv")
