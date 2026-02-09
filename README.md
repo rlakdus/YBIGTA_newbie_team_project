@@ -633,9 +633,11 @@ smart_router (LLM 판단)
 | **LLM** | Solar (Upstage API) - solar-mini |
 | **UI Framework** | Streamlit |
 
-### 서비스 실행 방법 및 주소
+### 서비스 실행 방법 및 streamlit cloud 주소
 
-#### 사전 준비
+#### 로컬에서 실행 
+
+##### 사전 준비
 ```bash
 # 1. 저장소 클론
 git clone 
@@ -650,13 +652,13 @@ source venv/bin/activate  # Mac/Linux
 pip install -r requirements.txt
 ```
 
-#### 환경변수 설정
+##### 환경변수 설정
 ```bash
 # .env 파일 생성
 echo 'UPSTAGE_API_KEY=your_api_key_here' > .env
 ```
 
-#### 실행
+##### 실행
 ```bash
 streamlit run streamlit_app.py
 ```
@@ -664,10 +666,12 @@ streamlit run streamlit_app.py
 실행 후 브라우저에서 자동으로 열리거나 다음 주소로 접속
 👉 [http://localhost:8501](http://localhost:8501)
 
+#### streamlit cloud 주소 👉 [Streamlit cloud 주소](https://ybigtanewbieteamproject-sb34bgbzmtjxc5mhgt5dtx.streamlit.app/)
+
 ### 서비스 실행 화면
 | 기능 | 화면 |
 |------|------|
-| 홈 화면 |<img width="1440" height="741" alt="Image" src="https://github.com/user-attachments/assets/14ddbded-0870-4048-aff7-50da45647fa2" />|
+| 홈 화면 |<img width="1440" height="714" alt="Image" src="https://github.com/user-attachments/assets/70a4e5bd-fd58-4167-9480-28018d8a3b2e" />|
 | 일반 대화 |<img width="1046" height="423" alt="Image" src="https://github.com/user-attachments/assets/2b0a9fb8-2d39-4429-978f-9a284a6caf7f" />|
 | 기본 정보 질문 |<img width="1028" height="308" alt="Image" src="https://github.com/user-attachments/assets/88191d6b-3e67-4645-ad08-4d2ff1733ff9" />|
 | 리뷰 질문 |<img width="791" height="580" alt="Image" src="https://github.com/user-attachments/assets/53cadfe1-49fa-4e50-9f40-d13eef0b7dc5" /> <img width="1010" height="562" alt="Image" src="https://github.com/user-attachments/assets/4fce2164-b2ad-4445-86d9-838eb9bd6b37" /> <img width="1027" height="569" alt="Image" src="https://github.com/user-attachments/assets/c8ee7c04-a080-4798-9c57-9a511460c274" /> <img width="1046" height="630" alt="Image" src="https://github.com/user-attachments/assets/33bd8977-521a-411e-9026-ae036144ee96" 
