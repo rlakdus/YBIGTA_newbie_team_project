@@ -452,3 +452,222 @@ Docker Hub 주소 : [https://hub.docker.com/repository/docker/qkrwnsqja0220/ybig
 협업을 할 경우 브랜치 관리를 잘 해야한다는 점을 몸소 체험함. 또한 최신 코드 동기화의 중요성을 깨달을 수 있었음.
 코드 동기화의 경우 신입 교육 세션 git 발제 때 언급을 했던 부분이었는데, 그 때는 쉽게 생각하고 넘어갔지만 실제로 로컬과 원격 저장소의 이력이 달라 push가 거절되니 그 중요성을 한 번 더 깨닫게 되었음.
 
+----------------
+## 9회차 과제 (RAG, AI AGENT)
+### 개요: 달러구트 꿈 백화점 RAG 챗봇
+
+이 프로젝트는 도서 「달러구트 꿈 백화점」에 대한 정보와 독자 리뷰를 기반으로 질문에 답변하는 RAG(Retrieval-Augmented Generation) 챗봇입니다.
+
+LangGraph 기반 Agent 구조를 사용하여 사용자 질문의 의도를 LLM이 분석하고, 적절한 노드로 자동 라우팅합니다:
+- **일반 대화 노드** (`chat_node`): 인사, 잡담 등 일상적 대화
+- **도서 정보 노드** (`subject_info_node`): 작가, 가격, 줄거리 등 책의 기본 정보
+- **리뷰 RAG 노드** (`rag_review_node`): FAISS 벡터 검색을 통한 독자 리뷰 기반 답변
+
+### 시스템 아키텍쳐
+
+#### 전체 플로우
+
+<img width="701" alt="시스템 구조도" src="https://github.com/user-attachments/assets/b33c433a-9534-4f06-a8ec-03067d86a1e7" />
+
+#### 상세 실행 흐름
+
+1. **사용자 입력** 
+   - Streamlit UI를 통해 질문 입력
+   
+2. **State 초기화** 
+   - `ChatState` 객체 생성 (TypedDict)
+   - `user_input`, `messages`, `retrieved_docs` 등 상태 필드 초기화
+
+3. **LangGraph 실행** 
+   - `create_graph().invoke(state)` 호출
+   - 컴파일된 그래프가 상태를 받아 처리 시작
+
+4. **조건부 라우팅 (`router`)** 
+   - **LLM이 질문 의도를 분석**하여 다음 노드 결정
+   - System Prompt로 라우터 역할 지시
+   - Structured Output으로 정확한 노드 이름 반환
+
+5. **노드 실행**
+   - **`chat_node`**: 일반 대화 처리 (Solar LLM 직접 호출)
+   - **`subject_info_node`**: `subjects.json`에서 책 메타데이터 로드 → LLM에 전달
+   - **`rag_review_node`**: 
+     1. 질문 재작성 (대화 컨텍스트 반영)
+     2. FAISS 벡터 검색으로 관련 리뷰 검색
+     3. 검색된 리뷰를 컨텍스트로 LLM에게 전달
+     4. LLM이 리뷰 기반 답변 생성
+
+6. **응답 반환** 
+   - LLM 생성 응답을 Streamlit UI에 표시
+   - RAG 노드의 경우 참고한 리뷰도 함께 표시
+     
+### 핵심 구현 상세 
+
+#### 1. State Class 구현 방식: **`st_app/utils/state.py`**
+
+```python
+from typing import TypedDict, List, Optional, Dict, Any, Literal
+
+class ChatState(TypedDict, total=False):
+    user_input: str                      # 현재 사용자 입력
+    messages: List[Dict[str, Any]]       # 대화 히스토리 (role, content)
+    next_node: Optional[str]             # 라우팅된 다음 노드 이름
+    retrieved_docs: List[DocumentInfo]   # RAG로 검색된 문서 리스트
+    meta: Dict[str, Any]                 # 추가 메타데이터
+    rag_response: Optional[str]          # RAG 노드의 최종 응답
+```
+
+#### 설계 특징 및 이유
+
+**1) TypedDict 선택 이유**
+- LangGraph는 내부적으로 상태를 **딕셔너리 형태**로 관리
+- Pydantic `BaseModel`은 객체 인스턴스를 생성하여 타입 불일치 발생
+- `TypedDict`는 런타임에 일반 `dict`로 동작하면서도 타입 힌트 제공
+- 성능 최적화 및 직렬화(JSON 변환)에 유리
+
+**2) `total=False` 옵션**
+- 모든 필드를 Optional로 만들어 유연한 상태 관리
+- 노드마다 필요한 필드만 사용 가능
+- 초기화 시 부분적으로만 값을 채워도 타입 에러 없음
+
+**3) 딕셔너리 방식 접근**
+```python
+state["user_input"]
+state.get("messages", [])
+```
+
+#### 2. 조건부 라우팅 구현 방식: LLM 기반 동적 라우팅: **`st_app/graph/router.py`**
+
+**핵심 원리**: System Prompt를 사용하여 LLM을 라우터로 활용, 질문 의도를 분석하여 적절한 노드를 동적으로 선택
+
+#### 2-1. Structured Output을 활용한 라우팅
+```python
+from pydantic import BaseModel, Field
+from typing import Literal
+
+class RouteQuery(BaseModel):
+    """LLM이 반환할 구조화된 라우팅 결과"""
+    topic: Literal["subject_info", "rag_review", "general_chat"] = Field(
+        description=(
+            "도서 '달러구트 꿈 백화점'의 작가, 가격, 줄거리, 출판사 등 객관적 정보는 'subject_info', "
+            "실제 독자들의 리뷰 내용이나 평판, 감상평, 추천 여부 등 분석은 'rag_review', "
+            "단순 인사나 일상적인 대화, 책과 관련 없는 주제는 'general_chat'으로 분류하세요."
+        )
+    )
+
+def smart_router(state: ChatState) -> str:
+    """LLM이 질문 의도를 판단하여 노드를 선택하는 라우터"""
+    
+    # Solar LLM 로드
+    llm = get_llm(model="solar-mini", temperature=0)
+    
+    # Structured Output 설정: LLM이 RouteQuery 형식으로만 응답
+    structured_llm = llm.with_structured_output(RouteQuery)
+    
+    # System Prompt로 라우터 역할 명확히 지시
+    system_prompt = "너는 질문의 의도를 분석해 최적의 작업 노드를 결정하는 지능형 라우터야."
+    
+    # LLM 호출 및 노드 결정
+    result = structured_llm.invoke([
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=state["user_input"])
+    ])
+    
+    # 결정된 노드 이름 반환
+    return result.topic  # "subject_info" | "rag_review" | "general_chat"
+```
+
+##### 구현 상세 설명
+
+**1) System Prompt 활용**
+- LLM에게 "라우터" 역할을 명시적으로 부여
+- 각 노드의 목적과 분류 기준을 자연어로 설명
+- LLM이 문맥을 이해하고 유연하게 판단하도록 유도
+
+**2) Structured Output (`with_structured_output`)**
+- LLM 응답을 Pydantic 모델로 강제
+- `Literal` 타입으로 정확히 3개의 노드 중 하나만 선택
+- 파싱 오류 방지 및 타입 안정성 보장
+
+**LLM 기반 라우팅의 장점:**
+- ✅ **문맥 이해**: "이 책 살만해?" → 키워드 없지만 LLM이 리뷰 관련으로 판단
+- ✅ **유연성**: 다양한 표현 방식에 대응 ("재밌냐?", "어때?", "추천해?" 모두 인식)
+- ✅ **확장성**: 새로운 노드 추가 시 System Prompt만 수정하면 됨
+
+#### 2-2. 라우팅 동작 방식
+```
+사용자 입력
+    ↓
+smart_router (LLM 판단)
+    ↓
+┌─────────────┬──────────────┬──────────────┐
+│ general_chat│ subject_info │ rag_review   │
+│  (일반대화) │  (책 정보)   │  (리뷰 검색) │
+└─────────────┴──────────────┴──────────────┘
+    ↓              ↓              ↓
+  chat_node   subject_info_   rag_review_
+               node            node
+    ↓              ↓              ↓
+         LLM 응답 반환
+```
+
+
+#### 2-3. 라우팅 예시
+
+| 사용자 질문 | LLM 판단 | 선택된 노드 |
+|------------|---------|------------|
+| "안녕?" | general_chat | chat_node |
+| "이 책 작가가 누구야?" | subject_info | subject_info_node |
+| "리뷰 보여줘" | rag_review | rag_review_node |
+| "재밌어?" | rag_review | rag_review_node (의도 파악) |
+| "가격이 얼마야?" | subject_info | subject_info_node |
+
+
+### 사용 기술
+
+| 카테고리 | 기술 |
+|---------|------|
+| **Agent Framework** | LangGraph (조건부 라우팅) |
+| **LLM Framework** | LangChain |
+| **Vector DB** | FAISS (벡터 유사도 검색) |
+| **Embedding Model** | SBERT (snunlp/KR-SBERT-V40K-klueNLI-augSTS) |
+| **LLM** | Solar (Upstage API) - solar-mini |
+| **UI Framework** | Streamlit |
+
+### 서비스 실행 방법 및 주소
+
+#### 사전 준비
+```bash
+# 1. 저장소 클론
+git clone 
+cd YBIGTA_newbie_team_project
+
+# 2. 가상환경 생성 (선택)
+python -m venv venv
+source venv/bin/activate  # Mac/Linux
+# venv\Scripts\activate   # Windows
+
+# 3. 패키지 설치
+pip install -r requirements.txt
+```
+
+#### 환경변수 설정
+```bash
+# .env 파일 생성
+echo 'UPSTAGE_API_KEY=your_api_key_here' > .env
+```
+
+#### 실행
+```bash
+streamlit run streamlit_app.py
+```
+
+실행 후 브라우저에서 자동으로 열리거나 다음 주소로 접속
+👉 [http://localhost:8501](http://localhost:8501)
+
+### 서비스 실행 화면
+| 기능 | 화면 |
+|------|------|
+| 홈 화면 |<img width="1440" height="741" alt="Image" src="https://github.com/user-attachments/assets/14ddbded-0870-4048-aff7-50da45647fa2" />|
+| 일반 대화 |<img width="1046" height="423" alt="Image" src="https://github.com/user-attachments/assets/2b0a9fb8-2d39-4429-978f-9a284a6caf7f" />|
+| 기본 정보 질문 |<img width="1028" height="308" alt="Image" src="https://github.com/user-attachments/assets/88191d6b-3e67-4645-ad08-4d2ff1733ff9" />|
+| 리뷰 질문 |<img width="791" height="580" alt="Image" src="https://github.com/user-attachments/assets/53cadfe1-49fa-4e50-9f40-d13eef0b7dc5" /> <img width="1010" height="562" alt="Image" src="https://github.com/user-attachments/assets/4fce2164-b2ad-4445-86d9-838eb9bd6b37" /> <img width="1027" height="569" alt="Image" src="https://github.com/user-attachments/assets/c8ee7c04-a080-4798-9c57-9a511460c274" /> <img width="1046" height="630" alt="Image" src="https://github.com/user-attachments/assets/33bd8977-521a-411e-9026-ae036144ee96" 
