@@ -5,6 +5,23 @@ from st_app.utils.state import ChatState
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 def subject_info_node(state: ChatState):
+    """
+    도서 기본 정보 질문을 처리하는 LangGraph 노드.
+
+    사전에 구축된 subjects.json 파일에서 
+    도서 메타데이터를 불러와 LLM에게 제공하여 답변을 생성한다.
+
+    Args:
+        state (ChatState): 현재 LangGraph 상태 객체
+            - user_input (str): 사용자 질문
+            - messages (List[Dict]): 대화 히스토리
+
+    Returns:
+        dict:
+            - messages (List[AIMessage]): 생성된 LLM 응답 메시지
+            - rag_response (str): LLM이 생성한 답변 텍스트
+    """
+
     # 1. JSON 파일 로드 (경로 확인 필수)
     with open("st_app/db/subject_information/subjects.json", "r", encoding="utf-8") as f:
         subject_data = json.load(f)
