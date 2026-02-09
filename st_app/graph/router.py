@@ -1,10 +1,17 @@
 from typing import Literal
 from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage 
+from langgraph.graph import StateGraph, END
 from st_app.rag.llm import get_llm
 from st_app.utils.state import ChatState
 
-# 1. LLM이 답변 형식 
+# 노드 import
+from st_app.graph.nodes.chat_node import chat_node
+from st_app.graph.nodes.subject_info_node import subject_info_node
+from st_app.graph.nodes.rag_review_node import rag_review_node
+
+
+# 1. LLM 응답 형식 정의
 class RouteQuery(BaseModel):
     """사용자의 질문 의도를 분석하여 적절한 노드를 선택"""
     topic: Literal["subject_info", "rag_review", "general_chat"] = Field(
@@ -15,22 +22,58 @@ class RouteQuery(BaseModel):
         )
     )
 
+
+# 2. 라우터 함수
 def smart_router(state: ChatState) -> str:
     """
     LLM 판단에 따른 조건부 라우팅 함수
     """
-    llm = get_llm()
+    #llm = get_llm(temperature=0)
+    llm = get_llm(model="solar-mini")
+
     
-    # 2. LLM 답변 형식 RouteQuery로 지정
+    # LLM 응답 형식 지정
     structured_llm = llm.with_structured_output(RouteQuery)
     
     system_prompt = "너는 질문의 의도를 분석해 최적의 작업 노드를 결정하는 지능형 라우터야."
     
-    # 3. LLM 호출 
+    # LLM 호출 
     result = structured_llm.invoke([
         SystemMessage(content=system_prompt),
-        HumanMessage(content=state.user_input)
+        HumanMessage(content=state["user_input"])  # TypedDict 사용
     ])
     
-    # 4. 결과 반환
+    # 결과 반환
     return result.topic
+
+
+# 3. 그래프 생성 함수
+def create_graph():
+    """
+    LangGraph 생성 및 반환
+    """
+    # StateGraph 초기화
+    workflow = StateGraph(ChatState)
+    
+    # 노드 추가
+    workflow.add_node("general_chat", chat_node)
+    workflow.add_node("subject_info", subject_info_node)
+    workflow.add_node("rag_review", rag_review_node)
+    
+    # 조건부 엔트리 포인트 (라우터 연결)
+    workflow.set_conditional_entry_point(
+        smart_router,  # 라우팅 함수
+        {
+            "general_chat": "general_chat",
+            "subject_info": "subject_info",
+            "rag_review": "rag_review"
+        }
+    )
+    
+    # 각 노드 처리 후 종료
+    workflow.add_edge("general_chat", END)
+    workflow.add_edge("subject_info", END)
+    workflow.add_edge("rag_review", END)
+    
+    # 컴파일 후 반환
+    return workflow.compile()

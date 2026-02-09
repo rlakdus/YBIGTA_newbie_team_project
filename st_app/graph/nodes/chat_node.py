@@ -6,7 +6,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 def chat_node(state: ChatState):
     llm = get_llm()
     
-    current_messages = state.messages
+    current_messages = state.get("messages", [])
     
     history = []
     for msg in current_messages:
@@ -18,7 +18,12 @@ def chat_node(state: ChatState):
         else:
             history.append(msg)
         
-    response = llm.invoke([SystemMessage(content=CHAT_PROMPT),
-                           HumanMessage(content=f"사용자 질문: {state.user_input}\n질문에 맞춰서 센스 있게 대답해줘.")])
+    #response = llm.invoke([SystemMessage(content=CHAT_PROMPT), *history,
+                           #HumanMessage(content=f"사용자 질문: {state.user_input}\n질문에 맞춰서 센스 있게 대답해줘.")])
+    response = llm.invoke([
+        SystemMessage(content=CHAT_PROMPT),
+        *history,
+        HumanMessage(content=state["user_input"])
+    ])
     
     return {"messages": [response]}
